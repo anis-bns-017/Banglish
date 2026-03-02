@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Mic, MicOff, Headphones, HeadphonesOff,
-  Users, MessageCircle, Hand, HandMetal,
+  Mic, MicOff, Headphones, Users, MessageCircle, Hand, HandMetal,
   Settings, LogOut, Copy, Volume2,
   UserPlus, Shield, VolumeX, ChevronUp,
   ChevronDown, MoreVertical, Lock, Globe
 } from 'lucide-react';
+
 import axios from '../utils/axios';
 import { initializeSocket, getSocket, disconnectSocket } from '../utils/socket';
 import Peer from 'simple-peer';

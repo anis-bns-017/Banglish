@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Room from "./pages/Room";
+import Rooms from "./pages/Rooms";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -64,10 +65,10 @@ function AppContent() {
         }
       />
       <Route
-        path="/dashboard"
+        path="/rooms"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <Rooms />
           </ProtectedRoute>
         }
       />
@@ -84,6 +85,14 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
           </ProtectedRoute>
         }
       />

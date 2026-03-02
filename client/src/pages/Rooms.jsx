@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Users, Lock, Globe, Mic, MicOff, Search, Filter } from 'lucide-react';
-import axios from '../utils/axios';
-import CreateRoomModal from '../components/CreateRoomModal';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Users, Lock, Globe, Mic, MicOff, Search, Filter } from "lucide-react";
+import axios from "../utils/axios";
+import CreateRoomModal from "../components/CreateRoomModal";
+import { useSearchParams } from "react-router-dom";
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filters, setFilters] = useState({
-    category: '',
-    language: '',
-    search: ''
+    category: "",
+    language: "",
+    search: "",
   });
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    // Check if create modal should be shown
+    if (searchParams.get("create") === "true") {
+      setShowCreateModal(true);
+    }
+  }, [searchParams]);
+
   const [pagination, setPagination] = useState({
     page: 1,
-    totalPages: 1
+    totalPages: 1,
   });
 
   useEffect(() => {
@@ -29,28 +39,28 @@ const Rooms = () => {
         page: filters.page,
         ...(filters.category && { category: filters.category }),
         ...(filters.language && { language: filters.language }),
-        ...(filters.search && { search: filters.search })
+        ...(filters.search && { search: filters.search }),
       });
 
       const response = await axios.get(`/rooms?${params}`);
       setRooms(response.data.rooms);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error('Failed to fetch rooms:', error);
+      console.error("Failed to fetch rooms:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const categories = [
-    'all',
-    'language',
-    'music',
-    'gaming',
-    'tech',
-    'social',
-    'education',
-    'other'
+    "all",
+    "language",
+    "music",
+    "gaming",
+    "tech",
+    "social",
+    "education",
+    "other",
   ];
 
   return (
@@ -76,18 +86,22 @@ const Rooms = () => {
                 type="text"
                 placeholder="Search rooms..."
                 value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                onKeyPress={(e) => e.key === 'Enter' && fetchRooms()}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
+                onKeyPress={(e) => e.key === "Enter" && fetchRooms()}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
             <select
               value={filters.category}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, category: e.target.value })
+              }
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             >
-              {categories.map(cat => (
-                <option key={cat} value={cat === 'all' ? '' : cat}>
+              {categories.map((cat) => (
+                <option key={cat} value={cat === "all" ? "" : cat}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </option>
               ))}
@@ -136,13 +150,15 @@ const Rooms = () => {
                     </div>
 
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {room.description || 'No description'}
+                      {room.description || "No description"}
                     </p>
 
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        <span>{room.participantCount}/{room.maxParticipants}</span>
+                        <span>
+                          {room.participantCount}/{room.maxParticipants}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         {room.host && (
@@ -169,12 +185,14 @@ const Rooms = () => {
                     </div>
 
                     {/* Active speakers preview */}
-                    {room.participants?.filter(p => !p.isMuted).length > 0 && (
+                    {room.participants?.filter((p) => !p.isMuted).length >
+                      0 && (
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <div className="flex items-center gap-2 text-xs text-green-600">
                           <Mic className="h-3 w-3" />
                           <span>
-                            {room.participants.filter(p => !p.isMuted).length} speaking
+                            {room.participants.filter((p) => !p.isMuted).length}{" "}
+                            speaking
                           </span>
                         </div>
                       </div>
@@ -188,7 +206,9 @@ const Rooms = () => {
             {pagination.totalPages > 1 && (
               <div className="mt-8 flex justify-center gap-2">
                 <button
-                  onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
+                  onClick={() =>
+                    setFilters({ ...filters, page: filters.page - 1 })
+                  }
                   disabled={filters.page === 1}
                   className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
                 >
@@ -198,7 +218,9 @@ const Rooms = () => {
                   Page {filters.page} of {pagination.totalPages}
                 </span>
                 <button
-                  onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
+                  onClick={() =>
+                    setFilters({ ...filters, page: filters.page + 1 })
+                  }
                   disabled={filters.page === pagination.totalPages}
                   className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
                 >
