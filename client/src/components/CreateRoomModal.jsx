@@ -28,14 +28,37 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate
+    if (!formData.name.trim()) {
+      toast.error('Room name is required');
+      return;
+    }
+
+    if (formData.isPrivate && !formData.password.trim()) {
+      toast.error('Password is required for private rooms');
+      return;
+    }
+
+    setLoading(true);
+    
     try {
-      setLoading(true);
+      console.log('Submitting room data:', formData); // Debug log
+      
       const response = await axios.post('/rooms', formData);
+      
+      console.log('Room created:', response.data); // Debug log
+      
       toast.success('Room created successfully!');
       onRoomCreated();
       onClose();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create room');
+      console.error('Room creation error:', error);
+      console.error('Error response:', error.response?.data); // Debug log
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.errors?.[0] || 
+                          'Failed to create room';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -99,12 +122,13 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
+                Category *
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                required
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>

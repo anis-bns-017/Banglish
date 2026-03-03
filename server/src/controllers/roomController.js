@@ -1,11 +1,16 @@
-import Room from '../models/Room.js';
-import User from '../models/User.js';
-import bcrypt from 'bcryptjs';
+import Room from "../models/Room.js";
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 
+// @desc    Create a new room
+// @route   POST /api/rooms
 // @desc    Create a new room
 // @route   POST /api/rooms
 export const createRoom = async (req, res) => {
   try {
+    console.log("Creating room with data:", req.body); // Debug log
+    console.log("User:", req.user.id); // Debug log
+
     const {
       name,
       description,
@@ -15,8 +20,16 @@ export const createRoom = async (req, res) => {
       password,
       maxParticipants,
       tags,
-      image
+      image,
     } = req.body;
+
+    // Validate required fields
+    if (!name || !category) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and category are required",
+      });
+    }
 
     // Hash password if private room
     let hashedPassword = null;
@@ -25,47 +38,68 @@ export const createRoom = async (req, res) => {
       hashedPassword = await bcrypt.hash(password, salt);
     }
 
-    const room = await Room.create({
+    // Create room with proper structure
+    const roomData = {
       name,
-      description,
+      description: description || "",
       category,
-      language,
-      isPrivate,
+      language: language || "English",
+      isPrivate: isPrivate || false,
       password: hashedPassword,
       host: req.user.id,
       moderators: [req.user.id],
-      maxParticipants,
-      tags,
-      image,
-      participants: [{
-        user: req.user.id,
-        role: 'host',
-        isMuted: false
-      }]
-    });
+      maxParticipants: maxParticipants || 50,
+      tags: tags || [],
+      image: image || "",
+      participants: [
+        {
+          user: req.user.id,
+          role: "host",
+          isMuted: true,
+          joinedAt: new Date(),
+        },
+      ],
+    };
+
+    console.log("Room data to save:", roomData); // Debug log
+
+    const room = await Room.create(roomData);
 
     // Populate participant info
-    await room.populate('participants.user', 'username fullName avatar');
+    await room.populate("participants.user", "username fullName avatar");
+    await room.populate("host", "username fullName avatar");
+
+    console.log("Room created successfully:", room._id); // Debug log
 
     res.status(201).json({
       success: true,
-      message: 'Room created successfully',
-      room
+      message: "Room created successfully",
+      room,
     });
   } catch (error) {
-    console.error('Create room error:', error);
-    
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Validation Error', 
-        errors: Object.values(error.errors).map(e => e.message)
+    console.error("Create room error details:", error);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Validation Error",
+        errors: Object.values(error.errors).map((e) => e.message),
       });
     }
 
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error while creating room' 
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Room with this name already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while creating room: " + error.message,
     });
   }
 };
@@ -80,7 +114,7 @@ export const getRooms = async (req, res) => {
       search,
       page = 1,
       limit = 20,
-      sort = '-participantCount'
+      sort = "-participantCount",
     } = req.query;
 
     const query = { isActive: true };
@@ -95,8 +129,8 @@ export const getRooms = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const rooms = await Room.find(query)
-      .populate('host', 'username fullName avatar')
-      .populate('participants.user', 'username fullName avatar')
+      .populate("host", "username fullName avatar")
+      .populate("participants.user", "username fullName avatar")
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -110,14 +144,14 @@ export const getRooms = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
+        pages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
-    console.error('Get rooms error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Get rooms error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -127,26 +161,26 @@ export const getRooms = async (req, res) => {
 export const getRoomById = async (req, res) => {
   try {
     const room = await Room.findById(req.params.roomId)
-      .populate('host', 'username fullName avatar bio')
-      .populate('moderators', 'username fullName avatar')
-      .populate('participants.user', 'username fullName avatar');
+      .populate("host", "username fullName avatar bio")
+      .populate("moderators", "username fullName avatar")
+      .populate("participants.user", "username fullName avatar");
 
     if (!room) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Room not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
       });
     }
 
     res.json({
       success: true,
-      room
+      room,
     });
   } catch (error) {
-    console.error('Get room error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Get room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -159,46 +193,46 @@ export const joinRoom = async (req, res) => {
     const room = await Room.findById(req.params.roomId);
 
     if (!room) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Room not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
       });
     }
 
     // Check if room is full
     if (room.participants.length >= room.maxParticipants) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Room is full' 
+      return res.status(400).json({
+        success: false,
+        message: "Room is full",
       });
     }
 
     // Check if user is already in room
     const alreadyJoined = room.participants.some(
-      p => p.user.toString() === req.user.id
+      (p) => p.user.toString() === req.user.id,
     );
 
     if (alreadyJoined) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You are already in this room' 
+      return res.status(400).json({
+        success: false,
+        message: "You are already in this room",
       });
     }
 
     // Verify password for private rooms
     if (room.isPrivate) {
       if (!password) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Password is required for this room' 
+        return res.status(400).json({
+          success: false,
+          message: "Password is required for this room",
         });
       }
 
       const isMatch = await bcrypt.compare(password, room.password);
       if (!isMatch) {
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Incorrect password' 
+        return res.status(401).json({
+          success: false,
+          message: "Incorrect password",
         });
       }
     }
@@ -206,23 +240,23 @@ export const joinRoom = async (req, res) => {
     // Add user to participants
     room.participants.push({
       user: req.user.id,
-      role: 'listener',
-      joinedAt: new Date()
+      role: "listener",
+      joinedAt: new Date(),
     });
 
     await room.save();
-    await room.populate('participants.user', 'username fullName avatar');
+    await room.populate("participants.user", "username fullName avatar");
 
     res.json({
       success: true,
-      message: 'Joined room successfully',
-      room
+      message: "Joined room successfully",
+      room,
     });
   } catch (error) {
-    console.error('Join room error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Join room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -234,15 +268,15 @@ export const leaveRoom = async (req, res) => {
     const room = await Room.findById(req.params.roomId);
 
     if (!room) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Room not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
       });
     }
 
     // Remove user from participants
     room.participants = room.participants.filter(
-      p => p.user.toString() !== req.user.id
+      (p) => p.user.toString() !== req.user.id,
     );
 
     // If host leaves, assign new host or close room
@@ -250,7 +284,7 @@ export const leaveRoom = async (req, res) => {
       if (room.participants.length > 0) {
         // Assign new host (first participant)
         room.host = room.participants[0].user;
-        room.participants[0].role = 'host';
+        room.participants[0].role = "host";
       } else {
         // Close room if no participants left
         room.isActive = false;
@@ -261,14 +295,14 @@ export const leaveRoom = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Left room successfully',
-      roomId: room._id
+      message: "Left room successfully",
+      roomId: room._id,
     });
   } catch (error) {
-    console.error('Leave room error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Leave room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -280,17 +314,17 @@ export const updateRoom = async (req, res) => {
     const room = await Room.findById(req.params.roomId);
 
     if (!room) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Room not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
       });
     }
 
     // Check if user is host
     if (room.host.toString() !== req.user.id) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Only host can update room' 
+      return res.status(403).json({
+        success: false,
+        message: "Only host can update room",
       });
     }
 
@@ -303,7 +337,7 @@ export const updateRoom = async (req, res) => {
       password,
       maxParticipants,
       tags,
-      image
+      image,
     } = req.body;
 
     // Update fields
@@ -311,7 +345,7 @@ export const updateRoom = async (req, res) => {
     if (description !== undefined) room.description = description;
     if (category) room.category = category;
     if (language) room.language = language;
-    if (typeof isPrivate === 'boolean') room.isPrivate = isPrivate;
+    if (typeof isPrivate === "boolean") room.isPrivate = isPrivate;
     if (password) {
       const salt = await bcrypt.genSalt(10);
       room.password = await bcrypt.hash(password, salt);
@@ -324,14 +358,14 @@ export const updateRoom = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Room updated successfully',
-      room
+      message: "Room updated successfully",
+      room,
     });
   } catch (error) {
-    console.error('Update room error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Update room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -343,17 +377,17 @@ export const deleteRoom = async (req, res) => {
     const room = await Room.findById(req.params.roomId);
 
     if (!room) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Room not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
       });
     }
 
     // Check if user is host
     if (room.host.toString() !== req.user.id) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Only host can delete room' 
+      return res.status(403).json({
+        success: false,
+        message: "Only host can delete room",
       });
     }
 
@@ -361,13 +395,13 @@ export const deleteRoom = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Room deleted successfully'
+      message: "Room deleted successfully",
     });
   } catch (error) {
-    console.error('Delete room error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Delete room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -380,65 +414,67 @@ export const moderateRoom = async (req, res) => {
     const room = await Room.findById(req.params.roomId);
 
     if (!room) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Room not found' 
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
       });
     }
 
     // Check if user is host or moderator
     const isHost = room.host.toString() === req.user.id;
-    const isModerator = room.moderators.some(m => m.toString() === req.user.id);
+    const isModerator = room.moderators.some(
+      (m) => m.toString() === req.user.id,
+    );
 
     if (!isHost && !isModerator) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Only host and moderators can perform this action' 
+      return res.status(403).json({
+        success: false,
+        message: "Only host and moderators can perform this action",
       });
     }
 
     const participantIndex = room.participants.findIndex(
-      p => p.user.toString() === userId
+      (p) => p.user.toString() === userId,
     );
 
     if (participantIndex === -1) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found in room' 
+      return res.status(404).json({
+        success: false,
+        message: "User not found in room",
       });
     }
 
     switch (action) {
-      case 'mute':
+      case "mute":
         room.participants[participantIndex].isMuted = true;
         break;
-      case 'unmute':
+      case "unmute":
         room.participants[participantIndex].isMuted = false;
         break;
-      case 'make-speaker':
-        room.participants[participantIndex].role = 'speaker';
+      case "make-speaker":
+        room.participants[participantIndex].role = "speaker";
         break;
-      case 'make-listener':
-        room.participants[participantIndex].role = 'listener';
+      case "make-listener":
+        room.participants[participantIndex].role = "listener";
         break;
-      case 'make-moderator':
+      case "make-moderator":
         if (isHost) {
-          room.participants[participantIndex].role = 'moderator';
+          room.participants[participantIndex].role = "moderator";
           room.moderators.push(userId);
         } else {
-          return res.status(403).json({ 
-            success: false, 
-            message: 'Only host can assign moderators' 
+          return res.status(403).json({
+            success: false,
+            message: "Only host can assign moderators",
           });
         }
         break;
-      case 'remove':
+      case "remove":
         room.participants.splice(participantIndex, 1);
         break;
       default:
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Invalid action' 
+        return res.status(400).json({
+          success: false,
+          message: "Invalid action",
         });
     }
 
@@ -447,13 +483,13 @@ export const moderateRoom = async (req, res) => {
     res.json({
       success: true,
       message: `Action '${action}' performed successfully`,
-      room
+      room,
     });
   } catch (error) {
-    console.error('Moderate room error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    console.error("Moderate room error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -463,35 +499,35 @@ export const moderateRoom = async (req, res) => {
 export const getRecommendations = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     // Build recommendation query based on user interests and history
     const query = {
       isActive: true,
       $or: [
         { category: { $in: user.interests } },
         { tags: { $in: user.interests } },
-        { topics: { $in: user.interests } }
-      ]
+        { topics: { $in: user.interests } },
+      ],
     };
-    
+
     // Language learning recommendations
     if (user.learningLanguages?.length) {
-      const languages = user.learningLanguages.map(l => l.language);
+      const languages = user.learningLanguages.map((l) => l.language);
       query.$or.push({ targetLanguages: { $in: languages } });
     }
-    
+
     const rooms = await Room.find(query)
-      .populate('host', 'username fullName avatar level badges')
-      .sort('-popularityScore')
+      .populate("host", "username fullName avatar level badges")
+      .sort("-popularityScore")
       .limit(10);
-    
+
     res.json({
       success: true,
-      recommendations: rooms
+      recommendations: rooms,
     });
   } catch (error) {
-    console.error('Recommendations error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Recommendations error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -501,39 +537,46 @@ export const createPoll = async (req, res) => {
   try {
     const { question, options, duration } = req.body;
     const room = await Room.findById(req.params.roomId);
-    
+
     if (!room) {
-      return res.status(404).json({ success: false, message: 'Room not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Room not found" });
     }
-    
+
     // Check if user is host or moderator
     const isHost = room.host.toString() === req.user.id;
     const isModerator = room.moderators.includes(req.user.id);
-    
+
     if (!isHost && !isModerator) {
-      return res.status(403).json({ success: false, message: 'Only hosts and moderators can create polls' });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Only hosts and moderators can create polls",
+        });
     }
-    
+
     const poll = {
       question,
-      options: options.map(opt => ({ text: opt, votes: [] })),
+      options: options.map((opt) => ({ text: opt, votes: [] })),
       createdBy: req.user.id,
       createdAt: new Date(),
-      endsAt: new Date(Date.now() + (duration * 60 * 1000)),
-      isActive: true
+      endsAt: new Date(Date.now() + duration * 60 * 1000),
+      isActive: true,
     };
-    
+
     room.polls.push(poll);
     await room.save();
-    
+
     // Emit socket event
     const io = getIO();
-    io.to(req.params.roomId).emit('new-poll', poll);
-    
+    io.to(req.params.roomId).emit("new-poll", poll);
+
     res.json({ success: true, poll });
   } catch (error) {
-    console.error('Create poll error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Create poll error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -543,46 +586,52 @@ export const votePoll = async (req, res) => {
   try {
     const { optionIndex } = req.body;
     const room = await Room.findById(req.params.roomId);
-    
+
     if (!room) {
-      return res.status(404).json({ success: false, message: 'Room not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Room not found" });
     }
-    
+
     const poll = room.polls.id(req.params.pollId);
-    
+
     if (!poll || !poll.isActive) {
-      return res.status(404).json({ success: false, message: 'Poll not found or expired' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Poll not found or expired" });
     }
-    
+
     if (poll.endsAt < new Date()) {
       poll.isActive = false;
       await room.save();
-      return res.status(400).json({ success: false, message: 'Poll has ended' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Poll has ended" });
     }
-    
+
     // Remove previous vote if any
-    poll.options.forEach(opt => {
-      opt.votes = opt.votes.filter(v => v.toString() !== req.user.id);
+    poll.options.forEach((opt) => {
+      opt.votes = opt.votes.filter((v) => v.toString() !== req.user.id);
     });
-    
+
     // Add new vote
     poll.options[optionIndex].votes.push(req.user.id);
     await room.save();
-    
+
     // Emit updated results
     const io = getIO();
-    io.to(req.params.roomId).emit('poll-update', {
+    io.to(req.params.roomId).emit("poll-update", {
       pollId: req.params.pollId,
-      results: poll.options.map(opt => ({
+      results: poll.options.map((opt) => ({
         text: opt.text,
-        votes: opt.votes.length
-      }))
+        votes: opt.votes.length,
+      })),
     });
-    
+
     res.json({ success: true });
   } catch (error) {
-    console.error('Vote poll error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Vote poll error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -592,40 +641,44 @@ export const requestToSpeak = async (req, res) => {
   try {
     const { topic } = req.body;
     const room = await Room.findById(req.params.roomId);
-    
+
     if (!room) {
-      return res.status(404).json({ success: false, message: 'Room not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Room not found" });
     }
-    
+
     // Check if already in queue
     const alreadyInQueue = room.speakerQueue.some(
-      q => q.user.toString() === req.user.id
+      (q) => q.user.toString() === req.user.id,
     );
-    
+
     if (alreadyInQueue) {
-      return res.status(400).json({ success: false, message: 'Already in queue' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Already in queue" });
     }
-    
+
     room.speakerQueue.push({
       user: req.user.id,
       requestedAt: new Date(),
-      topic
+      topic,
     });
-    
+
     await room.save();
-    
+
     // Notify moderators
     const io = getIO();
-    io.to(req.params.roomId).emit('speaker-request', {
+    io.to(req.params.roomId).emit("speaker-request", {
       userId: req.user.id,
       username: req.user.username,
-      topic
+      topic,
     });
-    
-    res.json({ success: true, message: 'Added to speaker queue' });
+
+    res.json({ success: true, message: "Added to speaker queue" });
   } catch (error) {
-    console.error('Request to speak error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Request to speak error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -643,9 +696,9 @@ export const scheduleRoom = async (req, res) => {
       targetLanguages,
       isLanguageExchange,
       ticketPrice,
-      maxParticipants
+      maxParticipants,
     } = req.body;
-    
+
     const room = await Room.create({
       name,
       description,
@@ -659,18 +712,18 @@ export const scheduleRoom = async (req, res) => {
       maxParticipants,
       host: req.user.id,
       moderators: [req.user.id],
-      roomType: 'scheduled',
-      isActive: false // Scheduled rooms start inactive
+      roomType: "scheduled",
+      isActive: false, // Scheduled rooms start inactive
     });
-    
+
     res.status(201).json({
       success: true,
-      message: 'Room scheduled successfully',
-      room
+      message: "Room scheduled successfully",
+      room,
     });
   } catch (error) {
-    console.error('Schedule room error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Schedule room error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -679,16 +732,27 @@ export const scheduleRoom = async (req, res) => {
 export const getTrendingTopics = async (req, res) => {
   try {
     const trending = await Room.aggregate([
-      { $match: { isActive: true, createdAt: { $gte: new Date(Date.now() - 7*24*60*60*1000) } } },
-      { $unwind: '$topics' },
-      { $group: { _id: '$topics', count: { $sum: 1 }, totalParticipants: { $sum: '$participantCount' } } },
+      {
+        $match: {
+          isActive: true,
+          createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+      },
+      { $unwind: "$topics" },
+      {
+        $group: {
+          _id: "$topics",
+          count: { $sum: 1 },
+          totalParticipants: { $sum: "$participantCount" },
+        },
+      },
       { $sort: { count: -1, totalParticipants: -1 } },
-      { $limit: 20 }
+      { $limit: 20 },
     ]);
-    
+
     res.json({ success: true, trending });
   } catch (error) {
-    console.error('Trending topics error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Trending topics error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

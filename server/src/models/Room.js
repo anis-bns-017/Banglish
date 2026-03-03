@@ -97,12 +97,7 @@ const roomSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    tags: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+    // Remove duplicate tags array (there's another one below)
     image: {
       type: String,
       default: "",
@@ -272,28 +267,28 @@ const roomSchema = new mongoose.Schema(
   },
 );
 
-// Calculate popularity score
-roomSchema.pre("save", function (next) {
+
+roomSchema.pre("save", async function () {
+  // 1. Update participant count
+  this.participantCount = this.participants ? this.participants.length : 0;
+
+  // 2. Calculate popularity score
   const now = new Date();
-  const ageInHours = (now - this.createdAt) / (1000 * 60 * 60);
+  
+  // Fallback to 'now' if createdAt doesn't exist yet (first save)
+  const createdAt = this.createdAt || now;
+  const ageInHours = (now - createdAt) / (1000 * 60 * 60);
 
   this.popularityScore =
     this.participantCount * 10 +
-    this.peakParticipants * 5 +
-    this.totalSpeakingTime / 60 -
+    (this.peakParticipants || 0) * 5 +
+    (this.totalSpeakingTime || 0) / 60 -
     ageInHours * 0.5;
-
-  next();
+    
 });
 
 // Index for searching
 roomSchema.index({ name: "text", description: "text", tags: "text" });
-
-// Update participant count when participants array is modified
-roomSchema.pre("save", function (next) {
-  this.participantCount = this.participants.length;
-  next();
-});
 
 const Room = mongoose.model("Room", roomSchema);
 

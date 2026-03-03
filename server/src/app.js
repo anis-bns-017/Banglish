@@ -15,6 +15,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import connectDB from '../config/database.js';
 import profileRoutes from './routes/profileRoutes.js';
+import languageRoutes from './routes/languageRoutes.js';
 
 
 // Import database connection
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/languages', languageRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

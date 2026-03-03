@@ -55,9 +55,10 @@ const Room = () => {
   const [speakerQueue, setSpeakerQueue] = useState([]);
   const [showRequestToSpeak, setShowRequestToSpeak] = useState(false);
   const [speakTopic, setSpeakTopic] = useState("");
-  const [translationEnabled, setTranslationEnabled] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [translatedMessages, setTranslatedMessages] = useState({});
+  const [translationEnabled, setTranslationEnabled] = useState(false);
+  const [showLanguageBar, setShowLanguageBar] = useState(false);
 
   // WebRTC refs
   const peersRef = useRef({});
@@ -197,16 +198,19 @@ const Room = () => {
   }, [socketConnected, isModerator]);
 
   // Translation function
-  const translateMessage = async (message, targetLang) => {
+  const translateMessage = async (messageId, text, targetLang) => {
     try {
-      const response = await axios.post("/api/translate", {
-        text: message,
+      const response = await axios.post("/languages/translate", {
+        text,
         targetLang,
       });
-      return response.data.translatedText;
+
+      setTranslatedMessages((prev) => ({
+        ...prev,
+        [messageId]: response.data.translatedText,
+      }));
     } catch (error) {
       console.error("Translation failed:", error);
-      return message;
     }
   };
 
@@ -223,6 +227,21 @@ const Room = () => {
         );
       }
       setTranslatedMessages(translated);
+    }
+  };
+
+  // Toggle translation for a message
+  const toggleMessageTranslation = (messageId, text) => {
+    if (translatedMessages[messageId]) {
+      // Remove translation
+      setTranslatedMessages((prev) => {
+        const newPrev = { ...prev };
+        delete newPrev[messageId];
+        return newPrev;
+      });
+    } else {
+      // Translate
+      translateMessage(messageId, text, targetLanguage);
     }
   };
 
@@ -420,6 +439,31 @@ const Room = () => {
     toast.success("Invite link copied!");
   };
 
+  // Add translation controls to chat
+  const renderMessage = (msg) => (
+    <div key={msg.id} className="flex flex-col">
+      <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline space-x-2">
+          <span className="font-medium text-indigo-400">{msg.username}</span>
+          <span className="text-xs text-gray-500">
+            {new Date(msg.timestamp).toLocaleTimeString()}
+          </span>
+        </div>
+        {translationEnabled && (
+          <button
+            onClick={() => toggleMessageTranslation(msg.id, msg.content)}
+            className="text-xs text-indigo-400 hover:text-indigo-300"
+          >
+            {translatedMessages[msg.id] ? "Show original" : "Translate"}
+          </button>
+        )}
+      </div>
+      <p className="text-sm mt-1">
+        {translatedMessages[msg.id] || msg.content}
+      </p>
+    </div>
+  );
+
   const handleModeration = async (targetUserId, action) => {
     try {
       await axios.post(`/rooms/${roomId}/moderate`, {
@@ -537,7 +581,53 @@ const Room = () => {
             </div>
           </div>
         </div>
+        // Add language control to room header
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowLanguageBar(!showLanguageBar)}
+            className={`p-2 rounded-lg transition-colors ${
+              translationEnabled
+                ? "bg-indigo-600"
+                : "bg-gray-700 hover:bg-gray-600"
+            }`}
+            title="Language tools"
+          >
+            <Globe className="h-5 w-5" />
+          </button>
 
+          {showLanguageBar && (
+            <div className="absolute top-16 right-6 bg-gray-800 rounded-lg shadow-xl p-4 z-20">
+              <h3 className="text-sm font-medium mb-3">Translation Settings</h3>
+              <div className="space-y-3">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={translationEnabled}
+                    onChange={(e) => setTranslationEnabled(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <span className="text-sm">Enable translations</span>
+                </label>
+
+                {translationEnabled && (
+                  <select
+                    value={targetLanguage}
+                    onChange={(e) => setTargetLanguage(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 rounded-lg text-sm"
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                  </select>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Participants Grid */}
@@ -737,7 +827,6 @@ const Room = () => {
             </div>
           )}
         </div>
-
         {/* Control Bar */}
         <div className="bg-gray-800 border-t border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between">
