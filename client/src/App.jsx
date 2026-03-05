@@ -13,6 +13,8 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Room from "./pages/Room";
 import Rooms from "./pages/Rooms";
+import CreatorDashboard from "./pages/CreatorDashboard";
+import CreatorApplication from './pages/CreatorApplication';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -93,6 +95,24 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/creator/dashboard"
+        element={
+          <ProtectedRoute>
+            <CreatorDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/creator/apply"
+        element={
+          <ProtectedRoute>
+            <CreatorApplication />
           </ProtectedRoute>
         }
       />

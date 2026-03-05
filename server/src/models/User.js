@@ -154,6 +154,91 @@ const userSchema = new mongoose.Schema(
       friendActivity: { type: Boolean, default: true },
       recommendations: { type: Boolean, default: true },
     },
+
+    // Creator settings
+    isCreator: {
+      type: Boolean,
+      default: false,
+    },
+    creatorApplication: {
+      status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+      },
+      submittedAt: Date,
+      reviewedAt: Date,
+      reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      notes: String,
+    },
+
+    // Payout information
+    stripeAccountId: String,
+    stripeAccountStatus: {
+      type: String,
+      enum: ["pending", "active", "incomplete", "rejected"],
+      default: "pending",
+    },
+    paypalEmail: String,
+
+    // Earnings
+    totalEarnings: {
+      type: Number,
+      default: 0,
+    },
+    availableBalance: {
+      type: Number,
+      default: 0,
+    },
+    pendingBalance: {
+      type: Number,
+      default: 0,
+    },
+    lifetimeEarnings: {
+      type: Number,
+      default: 0,
+    },
+
+    // Payout history
+    payouts: [
+      {
+        amount: Number,
+        method: String,
+        status: {
+          type: String,
+          enum: ["pending", "processed", "failed"],
+          default: "pending",
+        },
+        requestedAt: Date,
+        processedAt: Date,
+        transactionId: String,
+      },
+    ],
+
+    // Purchased tickets/subscriptions
+    tickets: [
+      {
+        room: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+        purchasedAt: Date,
+        amount: Number,
+        stripePaymentIntentId: String,
+      },
+    ],
+
+    subscriptions: [
+      {
+        room: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+        startedAt: Date,
+        expiresAt: Date,
+        autoRenew: { type: Boolean, default: true },
+        stripeSubscriptionId: String,
+        status: {
+          type: String,
+          enum: ["active", "canceled", "expired"],
+          default: "active",
+        },
+      },
+    ],
   },
   {
     timestamps: true,

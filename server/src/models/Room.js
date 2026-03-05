@@ -261,12 +261,87 @@ const roomSchema = new mongoose.Schema(
     totalSpeakingTime: { type: Number, default: 0 },
     peakParticipants: { type: Number, default: 0 },
     averageListenTime: { type: Number, default: 0 },
+
+    // Monetization
+    isMonetized: {
+      type: Boolean,
+      default: false,
+    },
+    ticketPrice: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    currency: {
+      type: String,
+      default: "usd",
+      enum: ["usd", "eur", "gbp", "inr"],
+    },
+    ticketSold: {
+      type: Number,
+      default: 0,
+    },
+    revenue: {
+      type: Number,
+      default: 0,
+    },
+    platformFee: {
+      type: Number,
+      default: 0,
+    },
+    creatorEarnings: {
+      type: Number,
+      default: 0,
+    },
+
+    // Subscription rooms
+    isSubscription: {
+      type: Boolean,
+      default: false,
+    },
+    subscriptionPrice: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    subscriptionInterval: {
+      type: String,
+      enum: ["month", "year"],
+      default: "month",
+    },
+    subscribers: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        subscribedAt: Date,
+        expiresAt: Date,
+        autoRenew: { type: Boolean, default: true },
+        stripeSubscriptionId: String,
+      },
+    ],
+
+    // Donations
+    allowDonations: {
+      type: Boolean,
+      default: false,
+    },
+    totalDonations: {
+      type: Number,
+      default: 0,
+    },
+
+    // Payment methods accepted
+    acceptedPaymentMethods: [
+      {
+        type: String,
+        enum: ["card", "paypal", "crypto"],
+        default: ["card"],
+      },
+    ],
   },
   {
     timestamps: true,
   },
 );
-
 
 roomSchema.pre("save", async function () {
   // 1. Update participant count
@@ -274,7 +349,7 @@ roomSchema.pre("save", async function () {
 
   // 2. Calculate popularity score
   const now = new Date();
-  
+
   // Fallback to 'now' if createdAt doesn't exist yet (first save)
   const createdAt = this.createdAt || now;
   const ageInHours = (now - createdAt) / (1000 * 60 * 60);
@@ -284,7 +359,6 @@ roomSchema.pre("save", async function () {
     (this.peakParticipants || 0) * 5 +
     (this.totalSpeakingTime || 0) / 60 -
     ageInHours * 0.5;
-    
 });
 
 // Index for searching

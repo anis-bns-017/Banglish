@@ -214,6 +214,26 @@ const Room = () => {
     }
   };
 
+  // Check if room requires payment
+  const checkRoomAccess = async () => {
+    if (room.isMonetized && room.ticketPrice > 0) {
+      // Check if user has ticket
+      const hasTicket = user?.tickets?.some((t) => t.room === roomId);
+      if (!hasTicket) {
+        setShowTicketModal(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Add to the join button logic
+  const handleJoinClick = async () => {
+    if (await checkRoomAccess()) {
+      joinRoom();
+    }
+  };
+
   // Handle translation toggle
   const toggleTranslation = async () => {
     setTranslationEnabled(!translationEnabled);
@@ -671,6 +691,15 @@ const Room = () => {
                         {participant.role === "speaker" && (
                           <Volume2 className="h-3 w-3" />
                         )}
+                        {participant.role === "host" &&
+                          participant.user.isCreator && (
+                            <span
+                              className="ml-2 px-1.5 py-0.5 bg-yellow-500 text-xs rounded-full"
+                              title="Creator"
+                            >
+                              🎙️
+                            </span>
+                          )}
                       </div>
                     )}
 
@@ -782,6 +811,18 @@ const Room = () => {
           </div>
 
           {/* Chat Sidebar */}
+
+          {showTicketModal && (
+            <TicketModal
+              room={room}
+              onClose={() => setShowTicketModal(false)}
+              onSuccess={() => {
+                setShowTicketModal(false);
+                joinRoom();
+              }}
+            />
+          )}
+
           {showChat && (
             <div className="w-1/3 bg-gray-800 border-l border-gray-700 flex flex-col">
               <div className="p-4 border-b border-gray-700">

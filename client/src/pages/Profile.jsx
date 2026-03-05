@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { User, Mail, Calendar, Edit2, Save, Camera, Lock, ChevronRight } from "lucide-react";
+import {
+  User,
+  Mail,
+  Calendar,
+  Edit2,
+  Save,
+  Camera,
+  Lock,
+  ChevronRight,
+  DollarSign,
+  Clock,
+} from "lucide-react";
 import axios from "../utils/axios";
 import toast from "react-hot-toast";
 import LanguagePreferences from "../components/LanguagePreferences";
@@ -34,6 +45,16 @@ const Profile = () => {
       });
     }
   }, [user]);
+
+  // Function to fetch updated user profile
+  const fetchUserProfile = async () => {
+    try {
+      const response = await axios.get("/profile/me");
+      setUser(response.data.user);
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+    }
+  };
 
   const handleInputChange = (e) => {
     setFormData({
@@ -176,6 +197,11 @@ const Profile = () => {
                   <h1 className="text-2xl font-bold text-gray-900">
                     {user?.fullName}
                   </h1>
+                  {user?.isCreator && (
+                    <span className="ml-3 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                      Verified Creator
+                    </span>
+                  )}
                   <p className="text-gray-500">@{user?.username}</p>
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${
@@ -201,6 +227,7 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Language Learning Section */}
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-6 py-6">
             <div className="flex justify-between items-center mb-4">
@@ -254,6 +281,7 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Language Preferences Modal */}
         {showLanguagePrefs && (
           <LanguagePreferences
             onClose={() => setShowLanguagePrefs(false)}
@@ -485,6 +513,46 @@ const Profile = () => {
             )}
           </div>
         </div>
+
+        {/* Creator Application Section */}
+        {!user?.isCreator && user?.creatorApplication?.status !== "pending" && (
+          <div className="bg-white shadow rounded-lg mt-6">
+            <div className="px-6 py-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Become a Creator
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Monetize your rooms and earn from your content. Apply to become
+                a creator today!
+              </p>
+              <Link
+                to="/creator/apply"
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Apply for Creator Program
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Creator Application Pending Status */}
+        {user?.creatorApplication?.status === "pending" && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+            <div className="flex">
+              <Clock className="h-5 w-5 text-yellow-600" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Application Pending
+                </h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Your creator application is under review. We'll notify you
+                  once it's approved.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

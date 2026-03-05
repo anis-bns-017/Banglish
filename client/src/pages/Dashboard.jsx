@@ -15,6 +15,7 @@ import {
   Globe,
   Lock,
   ChevronRight,
+  DollarSign,
 } from "lucide-react";
 import axios from "../utils/axios";
 
@@ -137,7 +138,6 @@ const Dashboard = () => {
               <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
             </div>
           </Link>
-
           <Link
             to="/rooms?create=true"
             className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow p-6 border border-gray-200 hover:border-indigo-300"
@@ -157,7 +157,6 @@ const Dashboard = () => {
               <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
             </div>
           </Link>
-
           <Link
             to="/profile"
             className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow p-6 border border-gray-200 hover:border-indigo-300"
@@ -175,6 +174,16 @@ const Dashboard = () => {
               <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
             </div>
           </Link>
+          // In the navigation section, add after Profile link
+          {user?.isCreator && (
+            <Link
+              to="/creator/dashboard"
+              className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+            >
+              <DollarSign className="h-4 w-4 mr-1" />
+              Creator Studio
+            </Link>
+          )}
         </div>
 
         <div className="bg-white overflow-hidden shadow rounded-lg col-span-1 md:col-span-2">

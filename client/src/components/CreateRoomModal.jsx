@@ -1,63 +1,80 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import axios from '../utils/axios';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { X } from "lucide-react";
+import axios from "../utils/axios";
+import toast from "react-hot-toast";
 
 const CreateRoomModal = ({ onClose, onRoomCreated }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'social',
-    language: 'English',
+    name: "",
+    description: "",
+    category: "social",
+    language: "English",
     isPrivate: false,
-    password: '',
+    password: "",
     maxParticipants: 50,
-    tags: []
+    tags: [],
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isMonetized, setIsMonetized] = useState(false);
+  const [ticketPrice, setTicketPrice] = useState("");
+  const [currency, setCurrency] = useState("usd");
 
   const categories = [
-    'language', 'music', 'gaming', 'tech', 'social', 'education', 'other'
+    "language",
+    "music",
+    "gaming",
+    "tech",
+    "social",
+    "education",
+    "other",
   ];
 
   const languages = [
-    'English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Other'
+    "English",
+    "Spanish",
+    "French",
+    "German",
+    "Chinese",
+    "Japanese",
+    "Korean",
+    "Other",
   ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate
     if (!formData.name.trim()) {
-      toast.error('Room name is required');
+      toast.error("Room name is required");
       return;
     }
 
     if (formData.isPrivate && !formData.password.trim()) {
-      toast.error('Password is required for private rooms');
+      toast.error("Password is required for private rooms");
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      console.log('Submitting room data:', formData); // Debug log
-      
-      const response = await axios.post('/rooms', formData);
-      
-      console.log('Room created:', response.data); // Debug log
-      
-      toast.success('Room created successfully!');
+      console.log("Submitting room data:", formData); // Debug log
+
+      const response = await axios.post("/rooms", formData);
+
+      console.log("Room created:", response.data); // Debug log
+
+      toast.success("Room created successfully!");
       onRoomCreated();
       onClose();
     } catch (error) {
-      console.error('Room creation error:', error);
-      console.error('Error response:', error.response?.data); // Debug log
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.errors?.[0] || 
-                          'Failed to create room';
+      console.error("Room creation error:", error);
+      console.error("Error response:", error.response?.data); // Debug log
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0] ||
+        "Failed to create room";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -68,16 +85,16 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
       setFormData({
         ...formData,
-        tags: [...formData.tags, tagInput.trim()]
+        tags: [...formData.tags, tagInput.trim()],
       });
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   const removeTag = (tagToRemove) => {
     setFormData({
       ...formData,
-      tags: formData.tags.filter(tag => tag !== tagToRemove)
+      tags: formData.tags.filter((tag) => tag !== tagToRemove),
     });
   };
 
@@ -86,7 +103,10 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
       <div className="bg-white rounded-lg max-w-md w-full mx-4">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-semibold">Create New Room</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -99,7 +119,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               required
               maxLength={50}
@@ -112,7 +134,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               rows="3"
               maxLength={200}
@@ -126,11 +150,13 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
               </label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                 required
               >
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </option>
@@ -144,11 +170,15 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
               </label>
               <select
                 value={formData.language}
-                onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, language: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               >
-                {languages.map(lang => (
-                  <option key={lang} value={lang}>{lang}</option>
+                {languages.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {lang}
+                  </option>
                 ))}
               </select>
             </div>
@@ -159,10 +189,14 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
               <input
                 type="checkbox"
                 checked={formData.isPrivate}
-                onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPrivate: e.target.checked })
+                }
                 className="rounded text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="text-sm font-medium text-gray-700">Private Room</span>
+              <span className="text-sm font-medium text-gray-700">
+                Private Room
+              </span>
             </label>
           </div>
 
@@ -174,7 +208,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                 required={formData.isPrivate}
                 minLength={4}
@@ -189,7 +225,12 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
             <input
               type="number"
               value={formData.maxParticipants}
-              onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  maxParticipants: parseInt(e.target.value),
+                })
+              }
               min="2"
               max="1000"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
@@ -205,7 +246,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addTag())
+                }
                 placeholder="Add a tag"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               />
@@ -218,7 +261,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {formData.tags.map(tag => (
+              {formData.tags.map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800"
@@ -249,7 +292,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
               disabled={loading}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Room'}
+              {loading ? "Creating..." : "Create Room"}
             </button>
           </div>
         </form>
