@@ -14,7 +14,9 @@ import {
 } from '../controllers/profileController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import upload from '../middleware/uploadMiddleware.js'; // You'll need to create this
+import upload from '../middleware/cloudinaryUpload.js';
+import { addXP, getLeaderboards } from '../controllers/xpController.js';
+
 
 const router = express.Router();
 
@@ -137,5 +139,8 @@ router.post('/:userId/follow', toggleFollow);
 
 // Public profile route (keep this last as it uses a parameter)
 router.get('/:userId', getUserProfile);
+
+router.post('/add-xp', addXP);
+router.get('/leaderboards', getLeaderboards);
 
 export default router;

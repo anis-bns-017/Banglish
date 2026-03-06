@@ -112,6 +112,49 @@ const Room = () => {
     }
   };
 
+  // Add to socket listeners for tracking speaking time
+  useEffect(() => {
+    if (!socketConnected || !room) return;
+
+    let speakingTimer = null;
+    let speakingTime = 0;
+
+    const socket = getSocket();
+
+    socket.on("user-speaking", ({ userId, isSpeaking }) => {
+      if (userId === user?.id && isSpeaking) {
+        // Start tracking speaking time
+        speakingTimer = setInterval(() => {
+          speakingTime += 1;
+        }, 1000);
+      } else if (userId === user?.id && !isSpeaking) {
+        // Stop tracking and award XP
+        if (speakingTimer) {
+          clearInterval(speakingTimer);
+
+          // Award XP (1 XP per minute of speaking)
+          const xpEarned = Math.floor(speakingTime / 60);
+          if (xpEarned > 0) {
+            axios
+              .post("/users/add-xp", {
+                amount: xpEarned,
+                reason: "speaking",
+                roomId: room._id,
+              })
+              .then(() => {
+                toast.success(`+${xpEarned} XP earned!`);
+              });
+          }
+          speakingTime = 0;
+        }
+      }
+    });
+
+    return () => {
+      if (speakingTimer) clearInterval(speakingTimer);
+    };
+  }, [socketConnected, room, user]);
+
   const initAudio = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -181,6 +224,9 @@ const Room = () => {
         toast(`${username} wants to speak`);
       }
     });
+
+    const isHost = room?.host?._id === user?.id;
+    const isModerator = room?.moderators?.includes(user?.id) || isHost;
 
     socket.on("speaker-approved", ({ userId }) => {
       if (userId === user?.id) {

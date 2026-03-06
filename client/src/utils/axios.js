@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.REACT_APP_API_UR || 'http://localhost:5000/api';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -13,17 +13,14 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Don't log in production
-    if (import.meta.env.DEV) {
-      console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
-    }
+    console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
+    console.log('With credentials:', config.withCredentials);
     return config;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
-
 // Response interceptor - FIXED
 axiosInstance.interceptors.response.use(
   (response) => {

@@ -16,6 +16,9 @@ import {
   Lock,
   ChevronRight,
   DollarSign,
+  Trophy,
+  Medal,
+  Award,
 } from "lucide-react";
 import axios from "../utils/axios";
 
@@ -23,10 +26,13 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const [recentRooms, setRecentRooms] = useState([]);
   const [popularRooms, setPopularRooms] = useState([]);
+  const [topUsers, setTopUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
   useEffect(() => {
     fetchRooms();
+    fetchTopUsers();
   }, []);
 
   const fetchRooms = async () => {
@@ -45,6 +51,17 @@ const Dashboard = () => {
       console.error("Failed to fetch rooms:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTopUsers = async () => {
+    try {
+      const response = await axios.get("/users/leaderboard?type=xp&limit=5");
+      setTopUsers(response.data.leaders?.slice(0, 5) || []);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    } finally {
+      setLoadingLeaderboard(false);
     }
   };
 
@@ -94,6 +111,16 @@ const Dashboard = () => {
                 Profile
               </Link>
 
+              {user?.isCreator && (
+                <Link
+                  to="/creator/dashboard"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  Creator Studio
+                </Link>
+              )}
+
               <button
                 onClick={logout}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
@@ -117,8 +144,9 @@ const Dashboard = () => {
             Join a voice conversation or create your own room
           </p>
         </div>
+
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Link
             to="/rooms"
             className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow p-6 border border-gray-200 hover:border-indigo-300"
@@ -174,158 +202,270 @@ const Dashboard = () => {
               <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
             </div>
           </Link>
-           {user?.isCreator && (
-            <Link
-              to="/creator/dashboard"
-              className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
-            >
-              <DollarSign className="h-4 w-4 mr-1" />
-              Creator Studio
-            </Link>
-          )}
+          <Link
+            to="/leaderboards"
+            className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow p-6 border border-gray-200 hover:border-yellow-300"
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
+                <Trophy className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Leaderboards
+                </h3>
+                <p className="text-sm text-gray-500">
+                  See top contributors
+                </p>
+              </div>
+              <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
+            </div>
+          </Link>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg col-span-1 md:col-span-2">
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">Your Progress</h3>
-              <span className="text-sm text-gray-500">
-                Level {user?.level || 1}
-              </span>
-            </div>
-
-            {/* XP Bar */}
-            <div className="mb-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>XP Progress</span>
-                <span>
-                  {user?.xp || 0} / {(user?.level || 1) ** 2 * 100}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-indigo-600 h-2.5 rounded-full"
-                  style={{
-                    width: `${((user?.xp || 0) / ((user?.level || 1) ** 2 * 100)) * 100}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Badges */}
-            {user?.badges?.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">Badges</h4>
-                <div className="flex flex-wrap gap-2">
-                  {user.badges.map((badge, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs"
-                      title={badge.description}
-                    >
-                      <span>{badge.icon}</span>
-                      <span>{badge.name}</span>
+        {/* User Stats and Leaderboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* User Stats Cards - Left Side (2 columns) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Stats Cards Grid */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <User className="h-6 w-6 text-gray-400" />
                     </div>
-                  ))}
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Username
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          @{user?.username}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <Mail className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Email
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {user?.email}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <Calendar className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Member since
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {user?.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString()
+                            : "N/A"}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <TrendingUp className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Role
+                        </dt>
+                        <dd className="text-lg font-medium">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              user?.role === "admin"
+                                ? "bg-purple-100 text-purple-800"
+                                : user?.role === "moderator"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {user?.role || "user"}
+                          </span>
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* User Progress Card */}
+            <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium">Your Progress</h3>
+                  <span className="text-sm text-gray-500">
+                    Level {user?.level || 1}
+                  </span>
+                </div>
+
+                {/* XP Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>XP Progress</span>
+                    <span>
+                      {user?.xp || 0} / {(user?.level || 1) * 100}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-indigo-600 h-2.5 rounded-full"
+                      style={{
+                        width: `${((user?.xp || 0) / ((user?.level || 1) * 100)) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Badges */}
+                {user?.badges?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Badges</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {user.badges.map((badge, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs"
+                          title={badge.description}
+                        >
+                          <span>{badge.icon}</span>
+                          <span>{badge.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Leaderboard Section - Right Side (1 column) */}
+          <div className="bg-white shadow rounded-lg p-6 h-fit">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-medium text-gray-900 flex items-center">
+                <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
+                Top Contributors
+              </h2>
+              <Link
+                to="/leaderboards"
+                className="text-sm text-indigo-600 hover:text-indigo-500 flex items-center"
+              >
+                View All
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </div>
+
+            {loadingLeaderboard ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topUsers.map((user, index) => (
+                  <Link
+                    key={user._id}
+                    to={`/profile/${user._id}`}
+                    className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    {/* Rank */}
+                    <div className="w-8 text-center">
+                      {index === 0 && <Medal className="h-5 w-5 text-yellow-500" />}
+                      {index === 1 && <Medal className="h-5 w-5 text-gray-400" />}
+                      {index === 2 && <Medal className="h-5 w-5 text-amber-600" />}
+                      {index > 2 && <span className="text-sm text-gray-500">#{index + 1}</span>}
+                    </div>
+
+                    {/* Avatar */}
+                    <div className="ml-3">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <span className="text-xs font-medium text-indigo-600">
+                            {user.username?.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* User Info */}
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.fullName || user.username}
+                        </p>
+                        {user.isCreator && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            🎙️
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">Level {user.level || 1}</p>
+                    </div>
+
+                    {/* XP */}
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-indigo-600">
+                        {user.xp?.toLocaleString()} XP
+                      </p>
+                      {user.badges && user.badges.length > 0 && (
+                        <div className="flex justify-end space-x-0.5">
+                          {user.badges.slice(0, 2).map((badge, i) => (
+                            <span key={i} className="text-xs" title={badge.name}>
+                              {badge.icon}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+
+                {topUsers.length === 0 && (
+                  <div className="text-center py-8">
+                    <Award className="mx-auto h-10 w-10 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">No contributors yet</p>
+                    <p className="text-xs text-gray-400">Be the first to earn XP!</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
-        {/* User Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <User className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Username
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      @{user?.username}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Mail className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Email
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {user?.email}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Calendar className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Member since
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {user?.createdAt
-                        ? new Date(user.createdAt).toLocaleDateString()
-                        : "N/A"}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <TrendingUp className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Role
-                    </dt>
-                    <dd className="text-lg font-medium">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          user?.role === "admin"
-                            ? "bg-purple-100 text-purple-800"
-                            : user?.role === "moderator"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {user?.role || "user"}
-                      </span>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         {/* Recent Rooms Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
@@ -396,7 +536,7 @@ const Dashboard = () => {
                           <img
                             src={room.host.avatar}
                             alt=""
-                            className="h-5 w-5 rounded-full"
+                            className="h-5 w-5 rounded-full object-cover"
                           />
                         ) : (
                           <div className="h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -416,8 +556,9 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+
         {/* Popular Rooms Section */}
-        <div>
+        <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
               🔥 Popular Now
@@ -477,7 +618,8 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-        {/* Call to Action */}
+
+        {/* Call to Action - Empty State */}
         {!recentRooms.length && !popularRooms.length && (
           <div className="text-center py-12">
             <MessageCircle className="mx-auto h-12 w-12 text-gray-400" />

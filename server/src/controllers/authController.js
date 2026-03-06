@@ -8,7 +8,7 @@ export const register = async (req, res) => {
   try {
     console.log('Registration request received:', req.body);
 
-    const { username, email, password, fullName, nativeLanguage, interests } = req.body;
+    const { username, email, password, fullName, nativeLanguage, interests, learningLanguages } = req.body;
 
     // Validate required fields
     if (!username || !email || !password || !fullName) {
@@ -49,6 +49,7 @@ export const register = async (req, res) => {
       fullName,
       // Optional fields
       nativeLanguage: nativeLanguage || null,
+      learningLanguages: learningLanguages || [],
       interests: interests || [],
       // Initialize default values
       xp: 0,
