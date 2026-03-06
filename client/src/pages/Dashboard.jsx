@@ -174,8 +174,7 @@ const Dashboard = () => {
               <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
             </div>
           </Link>
-          // In the navigation section, add after Profile link
-          {user?.isCreator && (
+           {user?.isCreator && (
             <Link
               to="/creator/dashboard"
               className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"

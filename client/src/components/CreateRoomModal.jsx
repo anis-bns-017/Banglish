@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import axios from "../utils/axios";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext"; // Add this import
 
 const CreateRoomModal = ({ onClose, onRoomCreated }) => {
+  const { user } = useAuth(); // Add this to get user data
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -55,12 +58,28 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
       return;
     }
 
+    // Validate monetization for creators
+    if (isMonetized) {
+      if (!ticketPrice || ticketPrice < 0.5) {
+        toast.error("Ticket price must be at least $0.50");
+        return;
+      }
+    }
+
+    // Prepare data for submission
+    const submitData = {
+      ...formData,
+      isMonetized,
+      ticketPrice: isMonetized ? ticketPrice : null,
+      currency: isMonetized ? currency : null,
+    };
+
     setLoading(true);
 
     try {
-      console.log("Submitting room data:", formData); // Debug log
+      console.log("Submitting room data:", submitData); // Debug log
 
-      const response = await axios.post("/rooms", formData);
+      const response = await axios.post("/rooms", submitData);
 
       console.log("Room created:", response.data); // Debug log
 
@@ -100,8 +119,8 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-md w-full mx-4">
-        <div className="flex justify-between items-center p-6 border-b">
+      <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white">
           <h2 className="text-xl font-semibold">Create New Room</h2>
           <button
             onClick={onClose}
@@ -218,6 +237,85 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
             </div>
           )}
 
+          {/* Monetization Section - Only for verified creators */}
+          {user?.isCreator && (
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-medium mb-3">Monetization</h3>
+              
+              <div className="space-y-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isMonetized}
+                    onChange={(e) => setIsMonetized(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    This is a ticketed room
+                  </span>
+                </label>
+
+                {isMonetized && (
+                  <>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Price
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 text-gray-500">
+                            {currency === 'usd' && '$'}
+                            {currency === 'eur' && '€'}
+                            {currency === 'gbp' && '£'}
+                          </span>
+                          <input
+                            type="number"
+                            value={ticketPrice}
+                            onChange={(e) => setTicketPrice(e.target.value)}
+                            min="0.50"
+                            step="0.50"
+                            className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                            required={isMonetized}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Currency
+                        </label>
+                        <select
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="usd">USD</option>
+                          <option value="eur">EUR</option>
+                          <option value="gbp">GBP</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {ticketPrice && (
+                      <div className="bg-yellow-50 p-3 rounded-lg text-sm">
+                        <p className="text-yellow-800">
+                          💡 Platform fee: 10% • You'll receive{' '}
+                          <span className="font-semibold">
+                            {currency === 'usd' && '$'}
+                            {currency === 'eur' && '€'}
+                            {currency === 'gbp' && '£'}
+                            {(ticketPrice * 0.9).toFixed(2)}
+                          </span>{' '}
+                          per ticket
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Max Participants
@@ -279,7 +377,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 mt-6 sticky bottom-0 bg-white pt-2 border-t">
             <button
               type="button"
               onClick={onClose}
