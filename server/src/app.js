@@ -17,6 +17,8 @@ import connectDB from '../config/database.js';
 import profileRoutes from './routes/profileRoutes.js';
 import languageRoutes from './routes/languageRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import recommendationRoutes from './routes/recommendationRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 
 
 
@@ -49,6 +51,8 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/languages', languageRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

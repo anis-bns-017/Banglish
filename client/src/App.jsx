@@ -16,6 +16,7 @@ import Rooms from "./pages/Rooms";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import CreatorApplication from "./pages/CreatorApplication";
 import Leaderboards from "./pages/Leaderboards";
+import Analytics from "./pages/Analytics";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -123,6 +124,15 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <Leaderboards />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
           </ProtectedRoute>
         }
       />

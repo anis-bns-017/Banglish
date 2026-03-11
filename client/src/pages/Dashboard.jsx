@@ -21,6 +21,7 @@ import {
   Award,
 } from "lucide-react";
 import axios from "../utils/axios";
+import Recommendations from "../components/Recommendations";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -87,10 +88,10 @@ const Dashboard = () => {
             <div className="flex items-center">
               <Link to="/dashboard" className="flex items-center">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">H</span>
+                  <span className="text-white text-sm font-bold">B</span>
                 </div>
                 <span className="ml-2 text-xl font-semibold text-gray-900">
-                  Hilokal Clone
+                  Banglish
                 </span>
               </Link>
             </div>
@@ -214,9 +215,7 @@ const Dashboard = () => {
                 <h3 className="text-lg font-medium text-gray-900">
                   Leaderboards
                 </h3>
-                <p className="text-sm text-gray-500">
-                  See top contributors
-                </p>
+                <p className="text-sm text-gray-500">See top contributors</p>
               </div>
               <ChevronRight className="ml-auto h-5 w-5 text-gray-400" />
             </div>
@@ -402,16 +401,30 @@ const Dashboard = () => {
                   >
                     {/* Rank */}
                     <div className="w-8 text-center">
-                      {index === 0 && <Medal className="h-5 w-5 text-yellow-500" />}
-                      {index === 1 && <Medal className="h-5 w-5 text-gray-400" />}
-                      {index === 2 && <Medal className="h-5 w-5 text-amber-600" />}
-                      {index > 2 && <span className="text-sm text-gray-500">#{index + 1}</span>}
+                      {index === 0 && (
+                        <Medal className="h-5 w-5 text-yellow-500" />
+                      )}
+                      {index === 1 && (
+                        <Medal className="h-5 w-5 text-gray-400" />
+                      )}
+                      {index === 2 && (
+                        <Medal className="h-5 w-5 text-amber-600" />
+                      )}
+                      {index > 2 && (
+                        <span className="text-sm text-gray-500">
+                          #{index + 1}
+                        </span>
+                      )}
                     </div>
 
                     {/* Avatar */}
                     <div className="ml-3">
                       {user.avatar ? (
-                        <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+                        <img
+                          src={user.avatar}
+                          alt=""
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
                           <span className="text-xs font-medium text-indigo-600">
@@ -433,7 +446,9 @@ const Dashboard = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">Level {user.level || 1}</p>
+                      <p className="text-xs text-gray-500">
+                        Level {user.level || 1}
+                      </p>
                     </div>
 
                     {/* XP */}
@@ -444,7 +459,11 @@ const Dashboard = () => {
                       {user.badges && user.badges.length > 0 && (
                         <div className="flex justify-end space-x-0.5">
                           {user.badges.slice(0, 2).map((badge, i) => (
-                            <span key={i} className="text-xs" title={badge.name}>
+                            <span
+                              key={i}
+                              className="text-xs"
+                              title={badge.name}
+                            >
                               {badge.icon}
                             </span>
                           ))}
@@ -457,13 +476,21 @@ const Dashboard = () => {
                 {topUsers.length === 0 && (
                   <div className="text-center py-8">
                     <Award className="mx-auto h-10 w-10 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-500">No contributors yet</p>
-                    <p className="text-xs text-gray-400">Be the first to earn XP!</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      No contributors yet
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Be the first to earn XP!
+                    </p>
                   </div>
                 )}
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-8">
+          <Recommendations />
         </div>
 
         {/* Recent Rooms Section */}
