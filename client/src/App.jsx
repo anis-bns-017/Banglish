@@ -1,4 +1,4 @@
- import React from "react";
+import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -11,12 +11,15 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import Room from "./pages/Room";
 import Rooms from "./pages/Rooms";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import CreatorApplication from "./pages/CreatorApplication";
 import Leaderboards from "./pages/Leaderboards";
 import Analytics from "./pages/Analytics";
+import Offline from "./pages/Offline";
+import UpdateNotification from './components/UpdateNotification';
+import InstallPrompt from './components/InstallPrompt';
+import Room from "./pages/Room/Room";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -136,6 +139,9 @@ function AppContent() {
           </ProtectedRoute>
         }
       />
+
+      {/* Offline route */}
+      <Route path="/offline" element={<Offline />} />
     </Routes>
   );
 }
@@ -144,6 +150,10 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        {/* PWA Components - placed outside Routes but inside Router/AuthProvider */}
+        <UpdateNotification />
+        <InstallPrompt />
+        
         <Toaster
           position="top-right"
           toastOptions={{
