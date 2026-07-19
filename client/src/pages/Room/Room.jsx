@@ -33,6 +33,7 @@ const Room = () => {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [fullscreen, setFullscreen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [messages, setMessages] = useState([]);
 
   // Custom hooks
   const {
@@ -68,8 +69,6 @@ const Room = () => {
   } = UseWebRTC(roomId, user, localStream, isDeafened, volume);
 
   const {
-    messages,
-    setMessages,
     typingUsers,
     sendMessage,
     sendReaction,

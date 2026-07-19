@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Users, Lock, Globe, Mic, MicOff, Search, Filter } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Users, Lock, Globe, Mic, MicOff, Search, Filter, Plus } from "lucide-react";
 import axios from "../utils/axios";
 import CreateRoomModal from "../components/CreateRoomModal";
-import { useSearchParams } from "react-router-dom";
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
@@ -13,8 +12,41 @@ const Rooms = () => {
     category: "",
     language: "",
     search: "",
+    page: 1,
   });
   const [searchParams] = useSearchParams();
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 1,
+  });
+
+  // Languages for filter
+  const languages = [
+    "All",
+    "English",
+    "Spanish",
+    "French",
+    "German",
+    "Chinese",
+    "Japanese",
+    "Korean",
+    "Arabic",
+    "Russian",
+    "Portuguese",
+    "Italian",
+    "Other",
+  ];
+
+  const categories = [
+    "all",
+    "language",
+    "music",
+    "gaming",
+    "tech",
+    "social",
+    "education",
+    "other",
+  ];
 
   useEffect(() => {
     // Check if create modal should be shown
@@ -23,22 +55,17 @@ const Rooms = () => {
     }
   }, [searchParams]);
 
-  const [pagination, setPagination] = useState({
-    page: 1,
-    totalPages: 1,
-  });
-
   useEffect(() => {
     fetchRooms();
-  }, [filters.page]);
+  }, [filters.page, filters.category, filters.language, filters.search]);
 
   const fetchRooms = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: filters.page,
-        ...(filters.category && { category: filters.category }),
-        ...(filters.language && { language: filters.language }),
+        ...(filters.category && filters.category !== "all" && { category: filters.category }),
+        ...(filters.language && filters.language !== "All" && { language: filters.language }),
         ...(filters.search && { search: filters.search }),
       });
 
@@ -52,16 +79,22 @@ const Rooms = () => {
     }
   };
 
-  const categories = [
-    "all",
-    "language",
-    "music",
-    "gaming",
-    "tech",
-    "social",
-    "education",
-    "other",
-  ];
+  const handleFilterChange = (key, value) => {
+    setFilters({ ...filters, [key]: value, page: 1 });
+  };
+
+  const applyFilters = () => {
+    fetchRooms();
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      category: "",
+      language: "",
+      search: "",
+      page: 1,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -72,8 +105,9 @@ const Rooms = () => {
             <h1 className="text-2xl font-bold text-gray-900">Voice Rooms</h1>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
             >
+              <Plus className="h-4 w-4" />
               Create Room
             </button>
           </div>
@@ -84,35 +118,55 @@ const Rooms = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Search rooms..."
+                placeholder="Search rooms by name, description, or tags..."
                 value={filters.search}
-                onChange={(e) =>
-                  setFilters({ ...filters, search: e.target.value })
-                }
-                onKeyPress={(e) => e.key === "Enter" && fetchRooms()}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && applyFilters()}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
+            
             <select
               value={filters.category}
-              onChange={(e) =>
-                setFilters({ ...filters, category: e.target.value })
-              }
+              onChange={(e) => handleFilterChange("category", e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat === "all" ? "" : cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  {cat === "all" ? "All Categories" : cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </option>
               ))}
             </select>
-            <button
-              onClick={fetchRooms}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+
+            <select
+              value={filters.language}
+              onChange={(e) => handleFilterChange("language", e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             >
-              <Filter className="h-4 w-4" />
-              Apply Filters
-            </button>
+              {languages.map((lang) => (
+                <option key={lang} value={lang === "All" ? "" : lang}>
+                  {lang}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex gap-2">
+              <button
+                onClick={applyFilters}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Apply
+              </button>
+              {(filters.category || filters.language || filters.search) && (
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -123,6 +177,25 @@ const Rooms = () => {
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
+        ) : rooms.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow p-8">
+              <Users className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No rooms found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {filters.search || filters.category || filters.language
+                  ? "Try adjusting your filters"
+                  : "Be the first to create a room!"}
+              </p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Room
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -130,17 +203,24 @@ const Rooms = () => {
                 <Link
                   key={room._id}
                   to={`/room/${room._id}`}
-                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden group"
                 >
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
                           {room.name}
                         </h3>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                          {room.category}
-                        </span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {room.category}
+                          </span>
+                          {room.language && room.language !== "English" && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {room.language}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {room.isPrivate ? (
                         <Lock className="h-5 w-5 text-gray-400" />
@@ -149,50 +229,50 @@ const Rooms = () => {
                       )}
                     </div>
 
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {room.description || "No description"}
-                    </p>
+                    {room.description && (
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {room.description}
+                      </p>
+                    )}
 
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         <span>
-                          {room.participantCount}/{room.maxParticipants}
+                          {room.participantCount}/{room.maxParticipants || 50}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         {room.host && (
-                          <>
+                          <div className="flex items-center gap-1">
                             {room.host.avatar ? (
                               <img
                                 src={room.host.avatar}
                                 alt={room.host.username}
-                                className="h-6 w-6 rounded-full"
+                                className="h-5 w-5 rounded-full"
                               />
                             ) : (
-                              <div className="h-6 w-6 rounded-full bg-indigo-100 flex items-center justify-center">
-                                <span className="text-xs font-medium text-indigo-600">
+                              <div className="h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span className="text-[10px] font-medium text-indigo-600">
                                   {room.host.username?.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             )}
-                            <span className="truncate max-w-[100px]">
+                            <span className="truncate max-w-[80px] text-xs">
                               {room.host.username}
                             </span>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
 
                     {/* Active speakers preview */}
-                    {room.participants?.filter((p) => !p.isMuted).length >
-                      0 && (
+                    {room.participants && room.participants.filter((p) => !p.isMuted).length > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <div className="flex items-center gap-2 text-xs text-green-600">
                           <Mic className="h-3 w-3" />
                           <span>
-                            {room.participants.filter((p) => !p.isMuted).length}{" "}
-                            speaking
+                            {room.participants.filter((p) => !p.isMuted).length} speaking
                           </span>
                         </div>
                       </div>
@@ -204,25 +284,46 @@ const Rooms = () => {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="mt-8 flex justify-center gap-2">
+              <div className="mt-8 flex justify-center items-center gap-2">
                 <button
-                  onClick={() =>
-                    setFilters({ ...filters, page: filters.page - 1 })
-                  }
+                  onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
                   disabled={filters.page === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+                  className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                 >
                   Previous
                 </button>
-                <span className="px-4 py-2">
-                  Page {filters.page} of {pagination.totalPages}
-                </span>
+                <div className="flex gap-1">
+                  {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (filters.page <= 3) {
+                      pageNum = i + 1;
+                    } else if (filters.page >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = filters.page - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setFilters({ ...filters, page: pageNum })}
+                        className={`px-3 py-2 rounded-md transition-colors ${
+                          filters.page === pageNum
+                            ? "bg-indigo-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button
-                  onClick={() =>
-                    setFilters({ ...filters, page: filters.page + 1 })
-                  }
+                  onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
                   disabled={filters.page === pagination.totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+                  className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                 >
                   Next
                 </button>
@@ -236,7 +337,10 @@ const Rooms = () => {
       {showCreateModal && (
         <CreateRoomModal
           onClose={() => setShowCreateModal(false)}
-          onRoomCreated={fetchRooms}
+          onRoomCreated={() => {
+            fetchRooms();
+            setShowCreateModal(false);
+          }}
         />
       )}
     </div>

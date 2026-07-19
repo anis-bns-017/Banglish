@@ -22,6 +22,8 @@ import InstallPrompt from './components/InstallPrompt';
 import Room from "./pages/Room/Room";
 
 // Protected Route Component
+// client/src/App.jsx
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -33,7 +35,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/register" />;
 };
 
 // Public Route Component
@@ -54,7 +56,7 @@ const PublicRoute = ({ children }) => {
 function AppContent() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="/" element={<Navigate to="/register" />} />
       <Route
         path="/login"
         element={
